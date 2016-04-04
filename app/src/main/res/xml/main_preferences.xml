@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:key="service_on"
+        android:title="@string/title_service_on"
+        android:summary="@string/summary_service_on"
+        android:defaultValue="true" />
+
+    <SwitchPreference
+        android:key="wifi_only"
+        android:title="@string/title_wifi_only"
+        android:summary="@string/summary_wifi_only"
+        android:defaultValue="true" />
+
+    <ListPreference
+        android:entries="@array/entries"
+        android:entryValues="@array/entry_values"
+        android:key="sat_key"
+        android:summary="@string/choose_sat_summary"
+        android:title="@string/choose_sat_title">
+    </ListPreference>
+
+</PreferenceScreen>

@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">SpaceWallpaper</string>
+    <string name="title_service_on">Service enabled</string>
+    <string name="summary_service_on">Summary service enabled</string>
+    <string name="title_wifi_only">Wi-Fi only</string>
+    <string name="summary_wifi_only">summary wi-fi only</string>
+    <string name="choose_sat_title">Choose satellite</string>
+    <string name="choose_sat_summary"></string>
+    <string-array name="entries">
+        <item>DSCOVR:EPIC</item>
+        <item>HIMAWARI-8</item>
+    </string-array>
+    <string-array  name="entry_values">
+        <item>DSCOVR</item>
+        <item>HIMAWARI</item>
+    </string-array>
+</resources>
