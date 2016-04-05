@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Космические обои</string>
+    <string name="choose_sat_title">Выбор спутника</string>
+    <string name="title_wifi_only">Только Wi-Fi</string>
+    <string name="title_service_on">Обновление </string>
+    <string name="summary_wifi_only">Загрузка новых фотографий только с использованием Wi-Fi</string>
+    <string name="summary_service_on">Включение/выключение загрузки новых фотографий</string>
+    <string name="choose_sat_summary">Доступно два спутника</string>
+</resources>
