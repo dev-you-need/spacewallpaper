@@ -142,7 +142,6 @@ public class SpaceWallPaperService extends WallpaperService {
                                 e1.printStackTrace();
                             }
 
-
                         } finally {
                             handler.removeCallbacks(loadRunner);
                             handler.postDelayed(loadRunner, (1000 * 60 * pauseMinutes) + (1000 * 60 * 60 * pauseHours));
@@ -192,7 +191,12 @@ public class SpaceWallPaperService extends WallpaperService {
                             canvas.drawText("Loading...", canvas_width / 2, canvas_height / 2, paint);
                         }
                     }
-                } finally {
+                } catch (Exception e){
+                    mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
+                    mTracker.setScreenName(TAG);
+                    mTracker.send(new HitBuilders.EventBuilder().setCategory("ERROR").setLabel(e.toString()).build());
+                }
+                finally {
                     if (canvas != null) {
                         holder.unlockCanvasAndPost(canvas);
                     }
@@ -211,7 +215,6 @@ public class SpaceWallPaperService extends WallpaperService {
             matrix.postScale(scaleWidth, scaleHeight);
             return Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
         }
-
 
         private void loadPicDSCOVR() throws Exception{
             Log.d(TAG, "loadPicDSCOVR start");
@@ -282,8 +285,6 @@ public class SpaceWallPaperService extends WallpaperService {
             return sb.toString();
             */
         }
-
-
 
         private void loadPicHimawari() throws Exception{
 
@@ -461,8 +462,5 @@ public class SpaceWallPaperService extends WallpaperService {
 
         return sb.toString();
     }
-
-
-
 
 }
