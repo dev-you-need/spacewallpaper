@@ -8,12 +8,18 @@
     <string name="choose_sat_summary">Two satellites are accessible</string>
     <string-array name="entries"
         translatable="false">
-        <item>DSCOVR:EPIC</item>
         <item>HIMAWARI-8</item>
+        <item>DSCOVR:EPIC</item>
     </string-array>
     <string-array  name="entry_values"
         translatable="false">
-        <item>DSCOVR</item>
         <item>HIMAWARI</item>
+        <item>DSCOVR</item>
     </string-array>
+    <string name="title_crop">Crop a photo</string>
+    <string name="summary_crop">Increase the picture by cutting edge</string>
+    <string name="loadingTrue">Loading...</string>
+    <string name="loadingNoWiFi">Use Wi-Fi or check settings.</string>
+    <string name="loadingNoNetwork">No network</string>
+    <string name="linkToDeerslab">Other apps of this developer</string>
 </resources>

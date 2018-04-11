@@ -6,5 +6,11 @@
     <string name="title_service_on">Обновление </string>
     <string name="summary_wifi_only">Загрузка новых фотографий только с использованием Wi-Fi</string>
     <string name="summary_service_on">Включение/выключение загрузки новых фотографий</string>
-    <string name="choose_sat_summary">Доступно два спутника</string>
+    <string name="choose_sat_summary">Доступно два спутника. После смены спутника требуется время для загрузки новой фотографии</string>
+    <string name="title_crop">Обрезать фото</string>
+    <string name="summary_crop">Увеличение фото, обрезая края</string>
+    <string name="loadingTrue">Загрузка...</string>
+    <string name="loadingNoWiFi">Используйте Wi-Fi или проверьте настройки.</string>
+    <string name="loadingNoNetwork">Нет сети</string>
+    <string name="linkToDeerslab">Другие приложения этого разработчика</string>
 </resources>

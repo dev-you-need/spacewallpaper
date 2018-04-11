@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <SwitchPreference
+    <CheckBoxPreference
         android:key="service_on"
         android:title="@string/title_service_on"
         android:summary="@string/summary_service_on"
         android:defaultValue="true" />
 
-    <SwitchPreference
+    <CheckBoxPreference
         android:key="wifi_only"
         android:title="@string/title_wifi_only"
         android:summary="@string/summary_wifi_only"
         android:defaultValue="false" />
 
-    <SwitchPreference
+    <CheckBoxPreference
         android:key="cropImage"
         android:title="@string/title_crop"
         android:summary="@string/summary_crop"
@@ -31,6 +31,5 @@
         <intent android:action="android.intent.action.VIEW"
             android:data="https://play.google.com/store/apps/dev?id=9167377661015982979" />
     </Preference>
-
 
 </PreferenceScreen>

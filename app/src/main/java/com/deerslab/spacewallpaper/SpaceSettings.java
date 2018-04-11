@@ -1,5 +1,6 @@
 package com.deerslab.spacewallpaper;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 
@@ -11,7 +12,12 @@ public class SpaceSettings extends PreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        addPreferencesFromResource(R.xml.main_preferences);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            addPreferencesFromResource(R.xml.main_preferences);
+        } else {
+            addPreferencesFromResource(R.xml.main_preferences_old);
+        }
     }
 
 }
