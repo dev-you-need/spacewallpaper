@@ -1,3 +1,7 @@
+<h2>Fork</h2>
+This fork fixes the bug which prevents the app from downloading images from DSCOVR satellite. It also adds support for adaptive icons.
+<br/>
+<h2>Original</h2>
 Android application, Live Wallpaper with real photos of Earth from space.
 
 Available photos from two satellites:
