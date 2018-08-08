@@ -10,13 +10,7 @@ import retrofit2.http.GET;
  */
 public interface DSCOVRdata {
 
-    @GET("/api/images.php")
-    Call<List<Photo>> getPhotos(/*@Query("date") String date*/);
+    @GET("api/images.php")
+    Call<List<DscovrImageData>> getPhotos(/*@Query("date") String date*/);
 
-    static class Photo {
-        String image;
-        String caption;
-        String coords;
-        String date;
-    }
 }

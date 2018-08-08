@@ -7,14 +7,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
-
 public class MainActivity extends Activity  {
 
     private final String TAG = this.getClass().getSimpleName();
-
-    private Tracker mTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,20 +19,6 @@ public class MainActivity extends Activity  {
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new Prefs1Fragment()).commit();
 */
-        try {
-            AnalyticsTrackers.initialize(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
-            mTracker.setScreenName(TAG);
-            mTracker.send(new HitBuilders.EventBuilder().setAction("start").build());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
 
         Intent intent = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,

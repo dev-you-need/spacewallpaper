@@ -9,6 +9,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -16,10 +18,9 @@ import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
-
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -53,11 +54,8 @@ public class SpaceWallPaperService extends WallpaperService {
     private final String DSCOVR_PIC_PATH = "https://api.nasa.gov/EPIC/archive/natural/%s.jpg?api_key=DEMO_KEY";
 
     private final String filename = "downloaded.png";
-    private final String jsonFilename = "temp.json";
 
-    private String temp = new String();
-
-    private Tracker mTracker;
+    private String temp;
 
     //himawari prefs
     // Масштаб: 4, 8, 16, 20. Финальное изображение состоит из level*level частей
@@ -66,16 +64,8 @@ public class SpaceWallPaperService extends WallpaperService {
     private Bitmap[][] bitmaps = new Bitmap[level][level];
 
 
-
     @Override
     public Engine onCreateEngine() {
-
-        try {
-            AnalyticsTrackers.initialize(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         return new SpaceEngine();
     }
 
@@ -112,52 +102,38 @@ public class SpaceWallPaperService extends WallpaperService {
                             if (refresh) {
 
                                 connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                                activeNetwork = connManager.getActiveNetworkInfo();
+                                if (connManager != null) {
+                                    activeNetwork = connManager.getActiveNetworkInfo();
 
-                                if (activeNetwork != null) {
+                                    if (activeNetwork != null) {
 
-                                    if (!(!(wifi_only) || (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI))) {
-                                        loading = getResources().getString(R.string.loadingNoWiFi);
-                                        Log.d(TAG, "no wi-fi");
+                                        if (!(!(wifi_only) || (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI))) {
+                                            loading = getResources().getString(R.string.loadingNoWiFi);
+                                            Log.d(TAG, "no wi-fi");
+                                            return;
+                                        }
+                                    } else {
+                                        loading = getResources().getString(R.string.loadingNoNetwork);
+                                        Log.d(TAG, "no network");
                                         return;
                                     }
-                                } else {
-                                    loading = getResources().getString(R.string.loadingNoNetwork);
-                                    Log.d(TAG, "no network");
-                                    return;
-                                }
 
-                                switch (satellite){
-                                    case HIMAWARI:
-                                        loadPicHimawari();
-                                        break;
-                                    case DSCOVR:
-                                        loadPicDSCOVR();
-                                        break;
-                                }
+                                    switch (satellite) {
+                                        case HIMAWARI:
+                                            loadPicHimawari();
+                                            break;
+                                        case DSCOVR:
+                                            loadPicDSCOVR();
+                                            break;
+                                    }
 
-                                try {
-                                    mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
-                                    mTracker.setScreenName(TAG);
-                                    mTracker.send(new HitBuilders.EventBuilder().setCategory("pic download").setLabel(satellite.toString()).build());
-                                } catch (Exception e) {
-                                    e.printStackTrace();
                                 }
-
                             }
 
                             draw();
 
                         } catch (Exception e) {
-
-                            try {
-                                mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
-                                mTracker.setScreenName(TAG);
-                                mTracker.send(new HitBuilders.EventBuilder().setCategory("ERROR").setLabel(e.toString()).build());
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
-
+                            e.printStackTrace();
                         } finally {
                             handler.removeCallbacks(loadRunner);
                             handler.postDelayed(loadRunner, (1000 * 60 * pauseMinutes) + (1000 * 60 * 60 * pauseHours));
@@ -169,10 +145,21 @@ public class SpaceWallPaperService extends WallpaperService {
             }
         };
 
-        public SpaceEngine() {
-
-
+        @Override
+        public void onTouchEvent(MotionEvent event) {
+            gestureDetector.onTouchEvent(event);
         }
+
+        private final GestureDetector gestureDetector = new GestureDetector(getApplicationContext(), new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                Log.d(TAG, "onDoubleTap event");
+
+                handler.post(loadRunner);
+                drawOK = true;
+                return true;
+            }
+        });
 
         private void draw() {
 
@@ -183,7 +170,7 @@ public class SpaceWallPaperService extends WallpaperService {
             Canvas canvas = null;
 
             Log.d(TAG, "drawOK: " + drawOK);
-            if(drawOK) {
+            if (drawOK) {
                 try {
                     canvas = holder.lockCanvas();
                     if (canvas != null) {
@@ -195,21 +182,24 @@ public class SpaceWallPaperService extends WallpaperService {
 
                             canvas.drawColor(Color.BLACK);
 
-                            Bitmap bitmap = BitmapFactory.decodeFile(getFilesDir() + File.separator + filename, options);
+                            BitmapDrawable bitmapDrawable = new BitmapDrawable(getApplicationContext().getResources(), getFilesDir() + File.separator + filename);
+                            Bitmap bitmap = bitmapDrawable.getBitmap();
                             if (bitmap != null) {
+
                                 if (cropImage) {
+                                    Rect drawingRect = new Rect();
                                     int size = (int) (Math.max(canvas_height, canvas_width) * scale);
                                     if (canvas_height > canvas_width) {
-                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_width/2 - size/2, 0, paint);
+                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_width / 2 - size / 2, 0, paint);
                                     } else {
-                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_height/2 - size/2, 0, paint);
+                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_height / 2 - size / 2, 0, paint);
                                     }
                                 } else {
                                     int size = (int) (Math.min(canvas_height, canvas_width) * scale);
                                     if (canvas_height > canvas_width) {
-                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), 0, canvas_height/2 - size/2, paint);
+                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), 0, canvas_height / 2 - size / 2, paint);
                                     } else {
-                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_width/2 - size/2, 0, paint);
+                                        canvas.drawBitmap(getResizedBitmap(bitmap, size, size), canvas_width / 2 - size / 2, 0, paint);
                                     }
                                 }
                                 bitmap.recycle();
@@ -223,12 +213,9 @@ public class SpaceWallPaperService extends WallpaperService {
                             canvas.drawText(loading == null ? getResources().getString(R.string.loadingTrue) : loading, canvas_width / 2, canvas_height / 2, paint);
                         }
                     }
-                } catch (Exception e){
-                    mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
-                    mTracker.setScreenName(TAG);
-                    mTracker.send(new HitBuilders.EventBuilder().setCategory("ERROR").setLabel(e.toString()).build());
-                }
-                finally {
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
                     if (canvas != null) {
                         holder.unlockCanvasAndPost(canvas);
                     }
@@ -238,7 +225,7 @@ public class SpaceWallPaperService extends WallpaperService {
             Log.d(TAG, "finish draw");
         }
 
-        public Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
+        Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
             int width = bm.getWidth();
             int height = bm.getHeight();
             float scaleWidth = ((float) newWidth) / width;
@@ -248,17 +235,22 @@ public class SpaceWallPaperService extends WallpaperService {
             return Bitmap.createBitmap(bm, 0, 0, width, height, matrix, false);
         }
 
-        private void loadPicDSCOVR() throws Exception{
+        private void loadPicDSCOVR() throws Exception {
             Log.d(TAG, "loadPicDSCOVR start");
 
+            String parsedDscovrJson = parseDscovrJson(callURL(DSCOVR_JSON_PATH));
+            if (parsedDscovrJson == null) {
+                Log.e(TAG, "parsedDscovrJson is null, aborting");
+                return;
+            }
             String picPath = String.format(
                     Locale.getDefault(),
                     DSCOVR_PIC_PATH,
-                    parseDscovrJson(callURL(DSCOVR_JSON_PATH)));
+                    parsedDscovrJson);
 
             Log.d(TAG, "picPath" + picPath);
 
-            if (temp.equals(picPath)){
+            if (temp.equals(picPath)) {
                 return;
             } else {
                 temp = picPath;
@@ -275,7 +267,7 @@ public class SpaceWallPaperService extends WallpaperService {
 
         }
 
-        private String parseDscovrJson(String jsonContent) throws Exception{
+        private String parseDscovrJson(String jsonContent) throws Exception {
 
             Log.d(TAG + " parseDscovrJson", jsonContent);
 
@@ -285,9 +277,10 @@ public class SpaceWallPaperService extends WallpaperService {
                     .build();
 
             DSCOVRdata data = retrofit.create(DSCOVRdata.class);
-            Call call = data.getPhotos();
-            Response<List<DSCOVRdata.Photo>> r = call.execute();
-            List<DSCOVRdata.Photo> photos = r.body();
+            Call<List<DscovrImageData>> call = data.getPhotos();
+            Response<List<DscovrImageData>> r = call.execute();
+            List<DscovrImageData> photos = r.body();
+            if (photos == null) return null;
 
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -295,30 +288,24 @@ public class SpaceWallPaperService extends WallpaperService {
             int photoHourMaximum = 0;
             int photoHourMaximiumIndex = 0;
 
-            for (int i=0; i<photos.size(); i++){
-                int photoHour = Integer.parseInt(photos.get(i).date.substring(11,13));
+            for (int i = 0; i < photos.size(); i++) {
+                int photoHour = Integer.parseInt(photos.get(i).date.substring(11, 13));
 
-                if (currentHour >= photoHour){
-                    if (photoHour > photoHourMaximum){
+                if (currentHour >= photoHour) {
+                    if (photoHour > photoHourMaximum) {
                         photoHourMaximum = photoHour;
                         photoHourMaximiumIndex = i;
                     }
                 }
             }
 
-
             String[] date = photos.get(photoHourMaximiumIndex).date.split(" ")[0].split("-");
 
-            Log.d("piece of date", date.toString());
-            Log.d("piece of url", photos.get(photoHourMaximiumIndex).image);
-            Log.d("piece of answer", date[0]+"/"+date[1]+"/"+date[2]+"/"+photos.get(photoHourMaximiumIndex).image);
-
-
-            return date[0]+"/"+date[1]+"/"+date[2]+"/jpg/"+photos.get(photoHourMaximiumIndex).image;
+            return date[0] + "/" + date[1] + "/" + date[2] + "/jpg/" + photos.get(photoHourMaximiumIndex).image;
 
         }
 
-        private void loadPicHimawari() throws Exception{
+        private void loadPicHimawari() throws Exception {
 
             Log.d(TAG, "loadPicHimawari start");
 
@@ -363,14 +350,14 @@ public class SpaceWallPaperService extends WallpaperService {
 
         }
 
-        private String parseHimawariJson(String jsonContent){
+        private String parseHimawariJson(String jsonContent) {
             StringBuilder sb = new StringBuilder();
 
             String[] jsonContentArray = jsonContent.split("_");
-            sb.append(jsonContentArray[2].substring(0, 4) + "/");
-            sb.append(jsonContentArray[2].substring(4, 6) + "/");
-            sb.append(jsonContentArray[2].substring(6, 8) + "/");
-            sb.append(jsonContentArray[3] + "00");
+            sb.append(jsonContentArray[2].substring(0, 4)).append("/");
+            sb.append(jsonContentArray[2].substring(4, 6)).append("/");
+            sb.append(jsonContentArray[2].substring(6, 8)).append("/");
+            sb.append(jsonContentArray[3]).append("00");
 
             return sb.toString();
         }
@@ -378,14 +365,6 @@ public class SpaceWallPaperService extends WallpaperService {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             Log.d("TAG", "onSharedPreferenceChanged");
-
-            try {
-                mTracker = AnalyticsTrackers.getInstance().get(AnalyticsTrackers.Target.APP);
-                mTracker.setScreenName(TAG);
-                mTracker.send(new HitBuilders.EventBuilder().setCategory("pref change").setLabel(key).build());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
             prefRefresh();
 
@@ -398,7 +377,7 @@ public class SpaceWallPaperService extends WallpaperService {
 
         }
 
-        protected void prefRefresh(){
+        void prefRefresh() {
 
             Log.d(TAG, "prefRefresh");
 
@@ -409,7 +388,7 @@ public class SpaceWallPaperService extends WallpaperService {
             refresh = preferences.getBoolean("service_on", true);
             cropImage = preferences.getBoolean("cropImage", false);
 
-            if (preferences.getString("sat_key", "DSCOVR").equals("HIMAWARI")){
+            if (preferences.getString("sat_key", "DSCOVR").equals("HIMAWARI")) {
                 satellite = Const.Satellite.HIMAWARI;
             } else {
                 satellite = Const.Satellite.DSCOVR;
@@ -462,7 +441,7 @@ public class SpaceWallPaperService extends WallpaperService {
 
             super.onVisibilityChanged(visible);
 
-                drawOK = true;
+            drawOK = true;
         }
 
         private float dp2px(int dp) {
@@ -471,12 +450,12 @@ public class SpaceWallPaperService extends WallpaperService {
         }
     }
 
-    public String callURL(String myURL){
+    public String callURL(String myURL) {
 
         Log.d(TAG, "start download " + myURL);
 
         StringBuilder sb = new StringBuilder();
-        URLConnection urlConn = null;
+        URLConnection urlConn;
         InputStreamReader in = null;
 
         try {
@@ -485,18 +464,16 @@ public class SpaceWallPaperService extends WallpaperService {
             if (urlConn != null)
                 urlConn.setReadTimeout(60 * 1000);
             if (urlConn != null && urlConn.getInputStream() != null) {
-                in = new InputStreamReader(urlConn.getInputStream(),
-                        Charset.defaultCharset());
+                in = new InputStreamReader(urlConn.getInputStream(), Charset.defaultCharset());
                 BufferedReader bufferedReader = new BufferedReader(in);
-                if (bufferedReader != null) {
-                    int cp;
-                    while ((cp = bufferedReader.read()) != -1) {
-                        sb.append((char) cp);
-                    }
-                    bufferedReader.close();
+                int cp;
+                while ((cp = bufferedReader.read()) != -1) {
+                    sb.append((char) cp);
                 }
+                bufferedReader.close();
             }
-            in.close();
+            if (in != null) in.close();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
